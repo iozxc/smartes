@@ -21,6 +21,8 @@ public @interface IndexField {
     /**
      * 默认为true参与搜索。
      * false时不参与搜索，只作为内容传递，但在指定should和must搜索下仍然能被搜索
+     *
+     * @return 默认为true参与搜索。
      */
     boolean isSearch() default true;
 }

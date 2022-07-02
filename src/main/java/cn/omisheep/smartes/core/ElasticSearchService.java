@@ -10,6 +10,7 @@ import java.util.List;
  * @author zhouxinchen[1269670415@qq.com]
  * @since 1.0.0
  */
+@SuppressWarnings("all")
 public interface ElasticSearchService {
     boolean isIndex(Class<?> clz);
 

@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@SuppressWarnings("all")
 public class ElasticSearchServiceImpl implements ElasticSearchService {
 
 

@@ -15,6 +15,7 @@ import java.util.Properties;
 @Slf4j
 @Intercepts(@Signature(type = Executor.class, method = "update", args = {MappedStatement.class,
         Object.class}))
+@SuppressWarnings("all")
 public class ESAop implements Interceptor {
 
     private final ElasticSearchService elasticSearchService;
