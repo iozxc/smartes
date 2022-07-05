@@ -3,6 +3,8 @@ package cn.omisheep.smartes.core;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import static cn.omisheep.smartes.core.SmartESProperties.ORM.MYBATIS;
+
 /**
  * @author zhouxinchen[1269670415@qq.com]
  * @since 1.0.0
@@ -12,6 +14,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SmartESProperties {
     private ClientConfig  client;
     private ServiceConfig service;
+
+    /**
+     * orm框架
+     * 1.0.5 仅支持mybatis
+     */
+    private ORM orm = MYBATIS;
+
+    public enum ORM {
+        MYBATIS
+    }
 
     @Data
     public static class ClientConfig {

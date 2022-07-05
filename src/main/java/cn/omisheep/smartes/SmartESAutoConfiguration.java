@@ -58,7 +58,7 @@ public class SmartESAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "smartes.orm", havingValue = "MYBATIS")
+    @ConditionalOnProperty(name = "smartes.orm", havingValue = "MYBATIS", matchIfMissing = true)
     @ConditionalOnMissingBean
     public ESAop esAop(ElasticSearchService elasticSearchService) {
         return new ESAop(elasticSearchService);

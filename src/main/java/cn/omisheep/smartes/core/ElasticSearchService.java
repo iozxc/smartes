@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zhouxinchen[1269670415@qq.com]
@@ -42,7 +43,7 @@ public interface ElasticSearchService {
     boolean delete(String clzName, List<String> list);
 
     HashMap<String, List<Object>> search(String keyword, Integer pageNo, Integer pageSize, String type,
-                                         String index, String must, String should, Boolean isHighlight);
+                                         String index, String must, String should, Boolean isHighlight, Map<String, Object> matchQuery);
 
-    HashMap<String, List<Object>> list(Integer pageNo, Integer pageSize, String index, String sortName, String order, boolean isAdmin);
+    HashMap<String, List<Object>> list(Integer pageNo, Integer pageSize, String index, String sortName, String order, Map<String, Object> matchQuery);
 }

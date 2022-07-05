@@ -66,7 +66,7 @@ public class ESAop implements Interceptor {
             case "updateById":
                 Object o = ((MapperMethod.ParamMap) parameter).get("param1");
                 if (clz == o.getClass()) {
-                    elasticSearchService.insert(o);
+                    elasticSearchService.update(o);
                 }
                 break;
             case "deleteById": {

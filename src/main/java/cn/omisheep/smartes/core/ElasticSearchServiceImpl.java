@@ -19,6 +19,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -309,7 +310,7 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
      */
     @Override
     public HashMap<String, List<Object>> search(String keyword, Integer pageNo, Integer pageSize, String type,
-                                                String index, String must, String should, Boolean isHighlight) {
+                                                String index, String must, String should, Boolean isHighlight, Map<String, Object> matchQuery) {
         return searchBuild(
                 keyword,
                 pageNo == null ? 0 : pageNo,
@@ -318,14 +319,16 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
                 sp(index),
                 sp(must),
                 sp(should),
-                isHighlight
+                isHighlight,
+                matchQuery
         );
     }
 
     @SneakyThrows
     @SuppressWarnings("all")
     private HashMap<String, List<Object>> searchBuild(String keyword, int pageNo, int pageSize, String type,
-                                                      String[] indices, String[] must, String[] should, Boolean isHighlight) {
+                                                      String[] indices, String[] must, String[] should, Boolean isHighlight,
+                                                      Map<String, Object> matchQuery) {
         log.info("pageNo: {} | pageSize: {} | keyword: {} | indices: {} | must: {} | should: {} | type: {}",
                 pageNo, pageSize, keyword, indices, must, should, type);
         if (keyword == null || keyword.trim().equals("")) return ConstantPool.EMPTY_HASH_MAP;
@@ -361,16 +364,23 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
         } else {
             for (String name : must) {
                 query.must(QueryBuilders.matchQuery(name, keyword));
-                highlightBuilder.field(name);
             }
             for (String name : should) {
                 query.should(QueryBuilders.matchQuery(name, keyword));
-                highlightBuilder.field(name);
             }
         }
-        query.should(QueryBuilders.matchQuery("published", true));
+
+        if (matchQuery != null) {
+            matchQuery.forEach((name, text) -> {
+                query.must(QueryBuilders.matchQuery(name, text));
+            });
+        }
 
         if (isHighlight != null && isHighlight) {
+            highlightBuilder
+                    .field("*")
+                    .fragmentSize(800000)
+                    .numOfFragments(0);
             highlightBuilder.preTags(config.getPreTags());
             highlightBuilder.postTags(config.getPostTags());
             searchSourceBuilder.highlighter(highlightBuilder);
@@ -399,7 +409,15 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
                 SearchHit           hit         = iterator.next();
                 Map<String, Object> sourceAsMap = hit.getSourceAsMap();
                 for (Map.Entry<String, HighlightField> entry : hit.getHighlightFields().entrySet()) {
-                    sourceAsMap.put(entry.getKey(), entry.getValue().fragments()[0].toString());
+                    StringBuilder sb = new StringBuilder();
+                    Iterator<Text> it = Arrays.stream(entry.getValue().fragments()).iterator();
+                    while (it.hasNext()){
+                        sb.append(it.next().toString());
+                        if (it.hasNext()) {
+                            sb.append("\n\n");
+                        }
+                    }
+                    sourceAsMap.put(entry.getKey(), sb.toString());
                 }
                 sourceAsMap.put("id", hit.getId());
                 dataMap.get(hit.getIndex()).add(sourceAsMap);
@@ -418,20 +436,20 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     }
 
     @Override
-    public HashMap<String, List<Object>> list(Integer pageNo, Integer pageSize, String index, String sortName, String order, boolean isAdmin) {
+    public HashMap<String, List<Object>> list(Integer pageNo, Integer pageSize, String index, String sortName, String order, Map<String, Object> matchQuery) {
         return listBuild(
                 pageNo == null ? 0 : pageNo,
                 pageSize == null ? config.getDefaultPageSize() : pageSize,
                 sp(index),
                 sortName,
                 "asc".equalsIgnoreCase(order) ? SortOrder.ASC : SortOrder.DESC,
-                isAdmin
+                matchQuery
         );
     }
 
     @SneakyThrows
     @SuppressWarnings("all")
-    private HashMap<String, List<Object>> listBuild(int pageNo, int pageSize, String[] indices, String sortName, SortOrder order, boolean isAdmin) {
+    private HashMap<String, List<Object>> listBuild(int pageNo, int pageSize, String[] indices, String sortName, SortOrder order, Map<String, Object> matchQuery) {
         log.info("list  -> pageNo: {} | pageSize: {} | indices: {}", pageNo, pageSize, indices);
 
         if (indices.length == 0) {
@@ -457,15 +475,32 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
         }
 
         MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
+        BoolQueryBuilder     query                = QueryBuilders.boolQuery();
+        if (matchQuery != null) {
+            matchQuery.forEach((name, text) -> {
+                query.must(QueryBuilders.matchQuery(name, text));
+            });
+        }
 
-        SearchRequest searchRequest = request.source(
-                searchSourceBuilder
-                        .query(matchAllQueryBuilder)
-                        .from(pageNo)
-                        .size(pageSize)
-                        .timeout(new TimeValue(60, TimeUnit.SECONDS))
-        );
+        SearchRequest searchRequest;
 
+        if (matchQuery != null) {
+            searchRequest = request.source(
+                    searchSourceBuilder
+                            .query(query)
+                            .from(pageNo)
+                            .size(pageSize)
+                            .timeout(new TimeValue(60, TimeUnit.SECONDS))
+            );
+        } else {
+            searchRequest = request.source(
+                    searchSourceBuilder
+                            .query(matchAllQueryBuilder)
+                            .from(pageNo)
+                            .size(pageSize)
+                            .timeout(new TimeValue(60, TimeUnit.SECONDS))
+            );
+        }
 
         // 增加高亮，并且返回格式化数据，score排序
         SearchHit[] hits = client.search(searchRequest, RequestOptions.DEFAULT).getHits().getHits();
@@ -475,23 +510,11 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
         for (String index : indices) {
             dataMap.put(index, new ArrayList<>());
         }
-        if (isAdmin) {
-            for (SearchHit hit : hits) {
-                Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-                sourceAsMap.put("id", hit.getId());
-                dataMap.get(hit.getIndex()).add(sourceAsMap);
-            }
-        } else {
-            for (SearchHit hit : hits) {
-                Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-                if (!sourceAsMap.get("published").equals(true)) {
-                    continue;
-                }
-                sourceAsMap.put("id", hit.getId());
-                dataMap.get(hit.getIndex()).add(sourceAsMap);
-            }
+        for (SearchHit hit : hits) {
+            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+            sourceAsMap.put("id", hit.getId());
+            dataMap.get(hit.getIndex()).add(sourceAsMap);
         }
-
 
         dataMap.keySet().removeIf(key -> dataMap.get(key).size() == 0);
         return dataMap;

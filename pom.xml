@@ -6,7 +6,7 @@
 
     <groupId>cn.omisheep</groupId>
     <artifactId>smartes-spring-boot-starter</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.4</version>
     <description>by zhou xin chen</description>
     <url>https://gitee.com/iozxc/smartes</url>
     <packaging>jar</packaging>
