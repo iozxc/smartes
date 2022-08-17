@@ -6,7 +6,7 @@
 
     <groupId>cn.omisheep</groupId>
     <artifactId>smartes-spring-boot-starter</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <description>by zhou xin chen</description>
     <url>https://gitee.com/iozxc/smartes</url>
     <packaging>jar</packaging>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>cn.omisheep</groupId>
             <artifactId>commons</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.7</version>
         </dependency>
 
         <!--搜索-->
@@ -75,8 +75,8 @@
     </dependencies>
     <scm>
         <tag>master</tag>
-        <url>scm:git:git@gitee.com:iozxc/smartes.git</url>
-        <connection>scm:git:git@gitee.com:iozxc/smartes.git</connection>
+        <url>scm:git@gitee.com:iozxc/smartes.git</url>
+        <connection>scm:git@gitee.com:iozxc/smartes.git</connection>
         <developerConnection>git@gitee.com:iozxc/smartes.git</developerConnection>
     </scm>
 
