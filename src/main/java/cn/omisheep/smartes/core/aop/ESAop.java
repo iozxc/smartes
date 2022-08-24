@@ -10,14 +10,12 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.Properties;
 
 @Slf4j
 @Intercepts(@Signature(type = Executor.class, method = "update", args = {MappedStatement.class,
         Object.class}))
 @SuppressWarnings("all")
 public class ESAop implements Interceptor {
-
     private final ElasticSearchService elasticSearchService;
 
     public ESAop(ElasticSearchService elasticSearchService) {
@@ -32,16 +30,13 @@ public class ESAop implements Interceptor {
         return proceed;
     }
 
-
     public Object plugin(Object o) {
         return Plugin.wrap(o, this);
     }
 
-    public void setProperties(Properties properties) {
-    }
-
     @SneakyThrows
-    private void fun(String method, Object parameter) {
+    private void fun(String method,
+                     Object parameter) {
         int    i          = method.lastIndexOf(".");
         String className  = method.substring(0, i);
         String methodName = method.substring(i + 1);

@@ -3,8 +3,6 @@ package cn.omisheep.smartes.core;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import static cn.omisheep.smartes.core.SmartESProperties.ORM.MYBATIS;
-
 /**
  * @author zhouxinchen[1269670415@qq.com]
  * @since 1.0.0
@@ -14,16 +12,6 @@ import static cn.omisheep.smartes.core.SmartESProperties.ORM.MYBATIS;
 public class SmartESProperties {
     private ClientConfig  client;
     private ServiceConfig service;
-
-    /**
-     * orm框架
-     * 1.0.5 仅支持mybatis
-     */
-    private ORM orm = MYBATIS;
-
-    public enum ORM {
-        MYBATIS
-    }
 
     @Data
     public static class ClientConfig {
@@ -36,7 +24,7 @@ public class SmartESProperties {
 
     @Data
     public static class ServiceConfig {
-        private String pkg             = "cn.omisheep.spook.entity"; // 实体类扫描的包名
+        private String pkg; // 实体类扫描的包名
         private String preTags         = "<span class=\"highlight\">"; // 高亮显示的前缀
         private String postTags        = "</span>"; // 高亮显示的后缀
         private int    defaultPageSize = 10;
