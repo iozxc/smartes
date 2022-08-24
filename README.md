@@ -7,7 +7,7 @@
 <dependency>
     <groupId>cn.omisheep</groupId>
     <artifactId>smartes-spring-boot-starter</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
 </dependency>
 ```
 
@@ -25,7 +25,7 @@ smartes:
     pkg: # 实体类所在包名
 ```
 
-- 版本使用7.14.0最新版本
+- 版本使用7.14.0
 
 ### 1. 自动创建索引
 
@@ -84,49 +84,60 @@ public class Article {
 
 - `@IndxField`
 
-  该注解用于属性上，被该注解标记的实体类顾名思义就是index里面的属性。可以自定义**搜索方式**，**分词方式**，**指定类型**，**指定名称**
+  该注解用于属性上，被该注解标记的实体类顾名思义就是index里面的属性。可以自定义**搜索方式**，**分词方式**，**指定类型**，**
+  指定名称**
   ，基础类型可以不写，其他的，比如String类型可以有text或者keyword。默认text。
-
-
 
 ### 2. 增删改统一方法
 
 如下
 
-
 ```java
 public interface ElasticSearchService {
-  boolean isIndex(Class<?> clz);
+    boolean isIndex(Class<?> clz);
 
-  boolean createIndex(Class<?> clz);
+    boolean createIndex(Class<?> clz);
 
-  boolean isExistIndex(Class<?> clz);
+    boolean isExistIndex(Class<?> clz);
 
-  boolean isAllExistIndex();
+    boolean isAllExistIndex();
 
-  boolean updateIndex(Class<?> clz);
+    boolean updateIndex(Class<?> clz);
 
-  <E> int insert(E o);
+    <E> int insert(E o);
 
-  <E> boolean insert(List<E> list);
+    <E> boolean insert(List<E> list);
 
-  <E> int update(E o);
+    <E> int update(E o);
 
-  <E> boolean update(List<E> list);
+    <E> boolean update(List<E> list);
 
-  int delete(String clzName, String id);
+    int delete(String clzName,
+               String id);
 
-  boolean delete(String clzName, List<String> list);
+    boolean delete(String clzName,
+                   List<String> list);
 
-  HashMap<String, List<Object>> search(String keyword, Integer pageNo, Integer pageSize, String type,
-                                       String index, String must, String should, Boolean isHighlight, Map<String, Object> matchQuery);
+    HashMap<String, List<Object>> search(String keyword,
+                                         Integer pageNo,
+                                         Integer pageSize,
+                                         String type,
+                                         String index,
+                                         String must,
+                                         String should,
+                                         Boolean isHighlight,
+                                         Map<String, Object> matchQuery);
 
-  HashMap<String, List<Object>> list(Integer pageNo, Integer pageSize, String index, String sortName, String order, Map<String, Object> matchQuery);
+    HashMap<String, List<Object>> list(Integer pageNo,
+                                       Integer pageSize,
+                                       String index,
+                                       String sortName,
+                                       String order,
+                                       Map<String, Object> matchQuery);
 }
 ```
 
 ### 3. 搜索查询
-
 
 ```java
 
@@ -137,40 +148,41 @@ import java.util.HashMap;
 @Slf4j
 public class SearchController {
 
-  @Autowired
-  private ElasticSearchService elasticSearchService;
+    @Autowired
+    private ElasticSearchService elasticSearchService;
 
-  @GetMapping(value = {"/search", "/s"})
-  public Result search(@RequestParam(value = "kw", required = false) String keyword,
+    @GetMapping(value = {"/search", "/s"})
+    public Result search(@RequestParam(value = "kw", required = false) String keyword,
+                         @RequestParam(required = false) Integer pageNo,
+                         @RequestParam(required = false) Integer pageSize,
+                         @RequestParam(required = false) String type,
+                         @RequestParam(required = false) String index,
+                         @RequestParam(required = false) String must,
+                         @RequestParam(required = false) String should,
+                         @RequestParam(value = "highlight", required = false, defaultValue = "true") Boolean isHighlight) {
+        if (keyword == null) {
+            return Result.SUCCESS.data();
+        }
+        HashMap<String, Boolean> map = new HashMap<>();
+        map.put("published", true);
+        HashMap<String, List<Object>> search = elasticSearchService.search(keyword, pageNo, pageSize, type, index, must,
+                                                                           should, isHighlight, map);
+        return Result.SUCCESS.data(search);
+    }
+
+
+    @GetMapping(value = {"/list", "/l"})
+    public Result list(@RequestParam(value = "i", required = false) String index,
                        @RequestParam(required = false) Integer pageNo,
                        @RequestParam(required = false) Integer pageSize,
-                       @RequestParam(required = false) String type,
-                       @RequestParam(required = false) String index,
-                       @RequestParam(required = false) String must,
-                       @RequestParam(required = false) String should,
-                       @RequestParam(value = "highlight", required = false, defaultValue = "true") Boolean isHighlight) {
-    if (keyword == null) {
-      return Result.SUCCESS.data();
+                       @RequestParam(required = false) String sortName,
+                       @RequestParam(required = false) String order) {
+        if (index == null) {
+            return Result.SUCCESS.data();
+        }
+        HashMap<String, List<Object>> list = elasticSearchService.list(pageNo, pageSize, index, sortName, order, null);
+        return Result.SUCCESS.data(list);
     }
-    HashMap<String, Boolean>      map    = new HashMap<>();
-    map.put("published", true);
-    HashMap<String, List<Object>> search = elasticSearchService.search(keyword, pageNo, pageSize, type, index, must, should, isHighlight, map);
-    return  Result.SUCCESS.data(search);
-  }
-
-
-  @GetMapping(value = {"/list", "/l"})
-  public Result list(@RequestParam(value = "i", required = false) String index,
-                     @RequestParam(required = false) Integer pageNo,
-                     @RequestParam(required = false) Integer pageSize,
-                     @RequestParam(required = false) String sortName,
-                     @RequestParam(required = false) String order) {
-    if (index == null) {
-      return Result.SUCCESS.data();
-    }
-    HashMap<String, List<Object>> list = elasticSearchService.list(pageNo, pageSize, index, sortName, order, null);
-    return Result.SUCCESS.data(list);
-  }
 
 
 }
